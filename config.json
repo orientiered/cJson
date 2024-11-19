@@ -2,5 +2,7 @@
     "Россия": "Нефть",
     "hello": {"ru": "Привет", "de": "Gruß"},
     "America": "Trump",
-    "euler": 2.71862
+    "euler": 2.71862,
+    "COMP_STR": "Difference is ",
+    "DEF_STR" : "It is "
 }

@@ -2,7 +2,7 @@
 #define JSON_PARSER_H__
 
 const size_t JSON_MAX_NAME_LEN = 128;
-const size_t JSON_START_FIELD_COUNT = 4;
+const size_t JSON_START_FIELD_COUNT = 1;
 
 #if defined(JSON_LOG_MAX) && !defined(NDEBUG)
     #define JSONlog(...) fprintf(stderr, __VA_ARGS__)
@@ -49,5 +49,7 @@ json_t *jsonParse(const char *jsonString, enum jsonStatus *err);
 enum jsonStatus jsonDtor(json_t *jsonObj);
 
 json_t *jsonGet(json_t *jsonObj, const char *field);
+
+enum jsonStatus jsonPrint(json_t *jsonObj, unsigned tabulation);
 
 #endif

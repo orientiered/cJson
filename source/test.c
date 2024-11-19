@@ -40,6 +40,8 @@ int main() {
     json_t *hello = jsonGet(json, "hello")->val.json_;
     printf("hallo-ru: %s\n", jsonGet(hello, "ru")->val.str_);
     printf("hallo-de: %s\n", jsonGet(hello, "de")->val.str_);
+
+    jsonPrint(json, 0);
     free(str);
     jsonDtor(json);
 }

@@ -51,15 +51,19 @@ static char *readString(const char **str) {
     return resultString;
 }
 
-static enum jsonStatus jsonRealloc(json_t *jsonObj, size_t *capacity) {
+static enum jsonStatus jsonRealloc(json_t **jsonObj, size_t *capacity) {
     assert(jsonObj);
     assert(capacity);
 
-    json_t *newJson = realloc(jsonObj, 2 * (*capacity) * sizeof(*jsonObj));
+    json_t *newJson = (json_t *) realloc(*jsonObj, 2 * (*capacity) * sizeof(**jsonObj));
     if (!newJson) {
-        fprintf(stderr, "Failed to reallocate data of json[%p]\n", jsonObj);
+        fprintf(stderr, "Failed to reallocate data of json[%p]\n", *jsonObj);
         return JSON_MEMORY_ERROR;
     }
+
+    *capacity *= 2;
+    *jsonObj = newJson;
+    return JSON_OK;
 }
 
 static enum jsonObjType getObjType(const char *str) {
@@ -202,7 +206,7 @@ json_t *jsonParseBase(const char **string, enum jsonStatus *err) {
 
         jsonObj->fieldCount++;
         if (jsonObj->fieldCount == capacity)
-            jsonRealloc(jsonObj, &capacity);
+            jsonRealloc(&jsonObj, &capacity);
 
         *string = skipSpaces(*string);
         if (**string == ',') (*string)++;
@@ -238,4 +242,43 @@ json_t *jsonGet(json_t *jsonObj, const char *field) {
             return jsonObj + fieldIdx;
     }
     return NULL;
+}
+
+
+static void printTabs(unsigned tabulation) {
+    for (unsigned tabIdx = 0; tabIdx < tabulation; tabIdx++)
+        putchar('\t');
+}
+
+enum jsonStatus jsonPrint(json_t *jsonObj, unsigned tabulation) {
+    printTabs(tabulation);
+    printf("{\n");
+
+    for (unsigned idx = 0; idx < jsonObj->fieldCount; idx++) {
+        printTabs(tabulation+1);
+        printf("\"%s\" : ", jsonObj[idx].name);
+        switch(jsonObj[idx].type) {
+            case jsonInt:
+                printf("%d,\n", jsonObj[idx].val.int_);
+                break;
+            case jsonFloat:
+                printf("%f,\n", jsonObj[idx].val.float_);
+                break;
+            case jsonString:
+                printf("\"%s\",\n", jsonObj[idx].val.str_);
+                break;
+            case jsonObject:
+                putchar('\n');
+                jsonPrint(jsonObj[idx].val.json_, tabulation + 1);
+                printf(",\n");
+                break;
+            default:
+                printf("TYPE ERROR,\n");
+                break;
+        }
+    }
+    printTabs(tabulation);
+    printf("}");
+
+    return JSON_OK;
 }
