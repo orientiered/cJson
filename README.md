@@ -4,7 +4,7 @@
 
 As simple as
 ```c++
-json_t *yourJson = jsonParse(yourJsonString, parseStatus);
+json_t *yourJson = jsonParse(yourJSON_STRING, parseStatus);
 ```
 
 ## Compiling

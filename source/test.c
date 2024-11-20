@@ -41,6 +41,7 @@ int main() {
     printf("hallo-ru: %s\n", jsonGet(hello, "ru")->val.str_);
     printf("hallo-de: %s\n", jsonGet(hello, "de")->val.str_);
 
+    printf("e: %f\n", *jsonGetFloat(json, "euler"));
     jsonPrint(json, 0);
     free(str);
     jsonDtor(json);

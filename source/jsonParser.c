@@ -10,8 +10,8 @@
 static json_t *jsonParseBase(const char **string, enum jsonStatus *err);
 
 json_t *jsonParse(const char *str, enum jsonStatus *err) {
-    const char *jsonString = str;
-    return jsonParseBase(&jsonString, err);
+    const char *JSON_STRING = str;
+    return jsonParseBase(&JSON_STRING, err);
 }
 
 static const char *skipSpaces(const char *str) {
@@ -71,9 +71,9 @@ static enum jsonObjType getObjType(const char *str) {
 
     switch(*str) {
         case '"':
-            return jsonString;
+            return JSON_STRING;
         case '{':
-            return jsonObject;
+            return JSON_OBJECT;
         //TODO:Maybe array support
         default:
             break;
@@ -84,7 +84,7 @@ static enum jsonObjType getObjType(const char *str) {
     // , } and space characters separate values
     while (*str && (*str != ',') && (*str != '}') && !isspace(*str)) {
         if (*str == '.') //float must have dot
-            return jsonFloat;
+            return JSON_FLOAT;
 
         if (isdigit(*str)) {
             str++;
@@ -94,7 +94,7 @@ static enum jsonObjType getObjType(const char *str) {
         return jsonNone;
     }
     // we did not find any wrong symbols, so this is integer
-    return jsonInt;
+    return JSON_INT;
 }
 
 static enum jsonStatus parseObjectValue(json_t *jsonObj, const char **string, enum jsonStatus *err) {
@@ -107,7 +107,7 @@ static enum jsonStatus parseObjectValue(json_t *jsonObj, const char **string, en
             fprintf(stderr, "Can't deduce type of object %10s...", *string);
             *err = JSON_TYPE_ERROR;
             break;
-        case jsonString: {
+        case JSON_STRING: {
             char *strValue = readString(string);
             if (!strValue) {
                 HANDLE_ERROR("string")
@@ -115,7 +115,7 @@ static enum jsonStatus parseObjectValue(json_t *jsonObj, const char **string, en
             jsonObj->val.str_ = strValue;
             break;
         }
-        case jsonInt: {
+        case JSON_INT: {
             long scannedChars = 0;
             sscanf(*string, "%d%ln", &jsonObj->val.int_, &scannedChars);
             if (scannedChars <= 0) {
@@ -124,7 +124,7 @@ static enum jsonStatus parseObjectValue(json_t *jsonObj, const char **string, en
             *string += scannedChars;
             break;
         }
-        case jsonFloat: {
+        case JSON_FLOAT: {
             long scannedChars = 0;
             sscanf(*string, " %f%ln", &jsonObj->val.float_, &scannedChars);
             if (scannedChars <= 0) {
@@ -134,7 +134,7 @@ static enum jsonStatus parseObjectValue(json_t *jsonObj, const char **string, en
             *string += scannedChars;
             break;
         }
-        case jsonObject: {
+        case JSON_OBJECT: {
             json_t *child = jsonParseBase(string, err);
             if (*err != JSON_OK) {
                 HANDLE_ERROR("object")
@@ -221,10 +221,10 @@ enum jsonStatus jsonDtor(json_t *jsonObj) {
     for (size_t fieldIdx = 0; fieldIdx < jsonObj->fieldCount; fieldIdx++) {
         free(jsonObj[fieldIdx].name);
 
-        if (jsonObj[fieldIdx].type == jsonString) {
+        if (jsonObj[fieldIdx].type == JSON_STRING) {
             free(jsonObj[fieldIdx].val.str_);
         }
-        else if (jsonObj[fieldIdx].type == jsonObject) {
+        else if (jsonObj[fieldIdx].type == JSON_OBJECT) {
             jsonDtor(jsonObj[fieldIdx].val.json_);
         }
     }
@@ -244,6 +244,37 @@ json_t *jsonGet(json_t *jsonObj, const char *field) {
     return NULL;
 }
 
+int *jsonGetInt(json_t *jsonObj, const char *field) {
+    assert(jsonObj);
+    assert(field);
+
+    json_t *foundField = jsonGet(jsonObj, field);
+    return (foundField && foundField->type == JSON_INT) ? &foundField->val.int_ : NULL;
+}
+
+float   *jsonGetFloat  (json_t *jsonObj, const char *field) {
+    assert(jsonObj);
+    assert(field);
+
+    json_t *foundField = jsonGet(jsonObj, field);
+    return (foundField && foundField->type == JSON_FLOAT) ? &foundField->val.float_ : NULL;
+}
+
+char   **jsonGetString (json_t *jsonObj, const char *field) {
+    assert(jsonObj);
+    assert(field);
+
+    json_t *foundField = jsonGet(jsonObj, field);
+    return (foundField && foundField->type == JSON_STRING) ? &foundField->val.str_ : NULL;
+}
+
+json_t **jsonGetObject (json_t *jsonObj, const char *field) {
+    assert(jsonObj);
+    assert(field);
+
+    json_t *foundField = jsonGet(jsonObj, field);
+    return (foundField && foundField->type == JSON_OBJECT) ? &foundField->val.json_ : NULL;
+}
 
 static void printTabs(unsigned tabulation) {
     for (unsigned tabIdx = 0; tabIdx < tabulation; tabIdx++)
@@ -258,16 +289,16 @@ enum jsonStatus jsonPrint(json_t *jsonObj, unsigned tabulation) {
         printTabs(tabulation+1);
         printf("\"%s\" : ", jsonObj[idx].name);
         switch(jsonObj[idx].type) {
-            case jsonInt:
+            case JSON_INT:
                 printf("%d,\n", jsonObj[idx].val.int_);
                 break;
-            case jsonFloat:
+            case JSON_FLOAT:
                 printf("%f,\n", jsonObj[idx].val.float_);
                 break;
-            case jsonString:
+            case JSON_STRING:
                 printf("\"%s\",\n", jsonObj[idx].val.str_);
                 break;
-            case jsonObject:
+            case JSON_OBJECT:
                 putchar('\n');
                 jsonPrint(jsonObj[idx].val.json_, tabulation + 1);
                 printf(",\n");

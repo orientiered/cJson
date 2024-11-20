@@ -12,10 +12,10 @@ const size_t JSON_START_FIELD_COUNT = 1;
 
 enum jsonObjType {
     jsonNone,
-    jsonInt,
-    jsonFloat,
-    jsonString,
-    jsonObject
+    JSON_INT,
+    JSON_FLOAT,
+    JSON_STRING,
+    JSON_OBJECT
 };
 
 struct json_t;
@@ -44,11 +44,19 @@ enum jsonStatus {
 };
 
 /// @brief
-json_t *jsonParse(const char *jsonString, enum jsonStatus *err);
+json_t *jsonParse(const char *JSON_STRING, enum jsonStatus *err);
 
 enum jsonStatus jsonDtor(json_t *jsonObj);
 
+/// @brief get json object with name field
 json_t *jsonGet(json_t *jsonObj, const char *field);
+
+/// @brief get pointer to stored value of type Int, float, string or object
+/// Return NULL if jsonObj[field] doesn't exists
+int     *jsonGetInt    (json_t *jsonObj, const char *field);
+float   *jsonGetFloat  (json_t *jsonObj, const char *field);
+char   **jsonGetString (json_t *jsonObj, const char *field);
+json_t **jsonGetObject (json_t *jsonObj, const char *field);
 
 enum jsonStatus jsonPrint(json_t *jsonObj, unsigned tabulation);
 
