@@ -7,17 +7,63 @@
 #include "jsonParser.h"
 
 
+static char *readFileToString(const char *fileName) {
+    FILE *file = fopen(fileName, "r");
+    if (!file) {
+        fprintf(stderr, "Can't open file %s\n", fileName);
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    size_t fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char *str = (char *) calloc(fileSize+1, sizeof(char));
+    if (fread(str, sizeof(char), fileSize, file) != fileSize) {
+        free(str);
+        fprintf(stderr, "Failed to read file %s\n", fileName);
+        return NULL;
+    }
+
+    return str;
+}
+
 static json_t *jsonParseBase(const char **string, enum jsonStatus *err);
 
 json_t *jsonParse(const char *str, enum jsonStatus *err) {
-    const char *JSON_STRING = str;
-    return jsonParseBase(&JSON_STRING, err);
+    assert(str);
+    const char *jsonStr = str;
+
+    enum jsonStatus parseStatus = JSON_OK;
+    return jsonParseBase(&jsonStr, (err) ? err : &parseStatus);
 }
 
+json_t *jsonParseFromFile(const char *fileName, enum jsonStatus *err) {
+    assert(fileName);
+
+    const char *jsonStr = readFileToString(fileName);
+    if (!jsonStr) return NULL;
+
+    enum jsonStatus parseStatus = JSON_OK;
+    return jsonParseBase(&jsonStr, (err) ? err : &parseStatus);
+
+}
+
+//skip space characters and comments that start with //
 static const char *skipSpaces(const char *str) {
     assert(str);
-    while(*str && isspace(*str))
-        str++;
+    bool isComment = false;
+    while(*str) {
+        if (*str == '/' && str[1] == '/')
+            isComment = true;
+        if (*str == '\n')
+            isComment = false;
+
+        if (isspace(*str) || isComment)
+            str++;
+        else
+            break;
+    }
     return str;
 }
 
@@ -33,8 +79,13 @@ static char *readString(const char **str) {
     //TODO: escape characters
     size_t strSize = 0;
     (*str)++;
-    const char *strStart = *str;
+    const char *strCopy = *str;
     while (**str && **str != '"') {
+        //escape character starts with backslash
+        //we skip it and symbol after it
+        if (**str == '\\')
+            (*str)++;
+
         (*str)++;
         strSize++;
     }
@@ -46,7 +97,30 @@ static char *readString(const char **str) {
     (*str)++;
 
     char *resultString = (char *) calloc(strSize+1, sizeof(char));
-    strncpy(resultString, strStart, strSize);
+    for (unsigned idx = 0; idx < strSize; idx++) {
+        if (*strCopy == '\\') {
+            strCopy++;
+            switch(*strCopy) {
+                case 'n':
+                    resultString[idx] = '\n';
+                    break;
+                case 'b':
+                    resultString[idx] = '\b';
+                    break;
+                case 'r':
+                    resultString[idx] = '\r';
+                    break;
+                case '0':
+                    resultString[idx] = '\0';
+                    break;
+                default:
+                    resultString[idx] = *strCopy;
+                    break;
+            }
+        } else resultString[idx] = *strCopy;
+        strCopy++;
+    }
+
     JSONlog("read string '%s'\n", resultString);
     return resultString;
 }

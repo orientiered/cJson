@@ -2,7 +2,7 @@
 #define JSON_PARSER_H__
 
 const size_t JSON_MAX_NAME_LEN = 128;
-const size_t JSON_START_FIELD_COUNT = 1;
+const size_t JSON_START_FIELD_COUNT = 4;
 
 #if defined(JSON_LOG_MAX) && !defined(NDEBUG)
     #define JSONlog(...) fprintf(stderr, __VA_ARGS__)
@@ -43,8 +43,11 @@ enum jsonStatus {
     JSON_MEMORY_ERROR   = 3     ///< Can't allocate memory
 };
 
-/// @brief
-json_t *jsonParse(const char *JSON_STRING, enum jsonStatus *err);
+/// @brief Parse json from given string
+json_t *jsonParse(const char *str, enum jsonStatus *err);
+
+/// @brief Parse json from file
+json_t *jsonParseFromFile(const char *fileName, enum jsonStatus *err);
 
 enum jsonStatus jsonDtor(json_t *jsonObj);
 

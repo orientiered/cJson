@@ -45,4 +45,7 @@ int main() {
     jsonPrint(json, 0);
     free(str);
     jsonDtor(json);
+    json = jsonParseFromFile("config.json", &err);
+    jsonPrint(json, 0);
+    jsonDtor(json);
 }

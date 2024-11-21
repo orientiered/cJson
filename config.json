@@ -4,5 +4,6 @@
     "America": "Trump",
     "euler": 2.71862,
     "COMP_STR": "Difference is ",
-    "DEF_STR" : "It is "
+    "DEF_STR" : "It is ",
+    "escape"  : "Hello \n guys\n"
 }
