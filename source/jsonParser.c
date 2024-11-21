@@ -41,11 +41,15 @@ json_t *jsonParse(const char *str, enum jsonStatus *err) {
 json_t *jsonParseFromFile(const char *fileName, enum jsonStatus *err) {
     assert(fileName);
 
-    const char *jsonStr = readFileToString(fileName);
+    char *fileString = readFileToString(fileName);
+    const char *jsonStr = fileString;
     if (!jsonStr) return NULL;
 
     enum jsonStatus parseStatus = JSON_OK;
-    return jsonParseBase(&jsonStr, (err) ? err : &parseStatus);
+    json_t *result = jsonParseBase((const char**)&jsonStr, (err) ? err : &parseStatus);
+
+    free(fileString);
+    return result;
 
 }
 
